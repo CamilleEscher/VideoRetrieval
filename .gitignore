@@ -1,0 +1,3 @@
+*.pyc
+gen_data
+__pycache__
