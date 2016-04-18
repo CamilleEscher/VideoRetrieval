@@ -1,6 +1,7 @@
 from simulate import simulate
 import numpy as np
 from math import *
+import os
 from Graph import Graph
 
 dataFolder = './gen_data/'
@@ -17,6 +18,9 @@ simulate(eventNb, keyframeNb, sampleNb, dataFolder + 'train.txt', dataFolder + '
 simulate(eventNb, keyframeNb, sampleNb, dataFolder + 'test.txt', dataFolder + 'testLabels.txt', 3)
 
 try :
+	
+	if not os.path.isdir(dataFolder) :
+		os.makedirs(dataFolder)
 	# Build kernels
 	kernels = []
 	data = np.zeros((eventNb * keyframeNb, sampleNb))
@@ -38,8 +42,7 @@ try :
 			for j in range(0, sampleNb) :
 				kernel[i, j] -= abs(dataSubEventI[i] - dataSubEventI[j])
 		kernels.append(np.copy(kernel))
-		print("kernels :")
-		print(kernels)
+		#print("kernels :" + str(kernels))
 	g = Graph(eventNb * keyframeNb, kernels)
 	g.visualize(dataFolder)
 

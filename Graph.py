@@ -1,8 +1,5 @@
-import numpy as np
-from math import *
-import random
-import copy
 import os
+from graphBuilder import *
 
 class Graph :
 
@@ -26,158 +23,25 @@ class Graph :
 
 	def __init__(self, leafNodeCard, leafKernels) :
 		# Get number of node per layer and set size
-		cardOfCurrentLayer = leafNodeCard
-		size = 0
-		cardinalities = []
-		while cardOfCurrentLayer > 1 :
-			cardinalities.insert(0, cardOfCurrentLayer)
-			cardOfCurrentLayer = int(ceil(cardOfCurrentLayer / 2.0))
-			size += cardinalities[0]
-		cardinalities.insert(0, 1)
-		self.m_size = size + 1
-		print("size = " + str(self.m_size))
-		print("cardinalities = ")
-		print(cardinalities)
-
+		cardinalities = getCards(leafNodeCard)
+		self.m_size = getSize(cardinalities)
 		# Get list of latest indexes per layer
-		lastIndexesPerLayer = [0 for x in range(len(cardinalities))]
-		lastIndexesPerLayer[0] += cardinalities[0] - 1
-		for i in range(1, len(cardinalities)) :
-			lastIndexesPerLayer[i] += lastIndexesPerLayer[i - 1] + cardinalities[i]
-		print("LastIndexesPerLayer = ")
-		print(lastIndexesPerLayer)
-
+		lastIndexesPerLayer = getLastIndexesPerLayer(cardinalities)
 		# Fill layers
-		layers = [0 for x in range(self.m_size)]
-		for i in range(self.m_size) :
-			for j in range(len(lastIndexesPerLayer)) :
-				if i <= lastIndexesPerLayer[j] :
-					layers[i] = j
-					break
-		self.m_layers = layers
-		print("layers = ")
-		print(self.m_layers)
-
+		self.m_layers = buildLayers(self.m_size, lastIndexesPerLayer)
 		# Fill natures
-		natures = [self.m_vertexNature['unknown'] for x in range(self.m_size)]
-		for i in range(self.m_size) :
-			if self.m_layers[i] == self.m_layers[-1] :
-				natures[i] = self.m_vertexNature['leaf']
-			else :
-				natures[i] = random.randrange(3)
-		self.m_natures = natures
-		print("natures = ")
-		print(self.m_natures)
-
+		self.m_natures = buildNatures(self.m_vertexNature, self.m_size, self.m_layers)
 		# Fill kernels
-		kernels = [np.zeros(leafKernels[0].shape) for x in range(self.m_size)]
-		it = 0
-		for i in range(self.m_size) :
-			if self.m_natures[i] == self.m_vertexNature['leaf'] :
-				kernels[i] = leafKernels[it]
-				it += 1
-		self.m_kernels = kernels
-#print("kernels = ")
-#print(self.m_kernels)
-
+		self.m_kernels = initKernels(self.m_size, self.m_vertexNature, leafKernels)
 		# Fill children with parents
-			# Fill m_potentialChildrenCard
-		potentialChildrenCard = [(0, 0) for x in range(self.m_size)]
-		for i in range(self.m_size) :
-#			nat = self.m_natures[i]
-# TEST
-#if nat == self.m_vertexNature['beforeN'] or nat == self.m_vertexNature['whileNotN'] :
-	   		potentialChildrenCard[i] = (2, 2)
-#		 	elif nat == self.m_vertexNature['whileN'] :
-#		 		maxCard = 0
-#		 		layer = self.m_layers[i]
-#		 		for l in self.m_layers :
-#		 			if l == layer + 1 :
-#		 				maxCard += 1
-#		 		potentialChildrenCard[i] = (1, maxCard)
-		self.m_potentialChildrenCard = potentialChildrenCard
-		print("potentialChildrenCard = ")
-		print(potentialChildrenCard)
-		childrenCard = [0 for x in range(self.m_size)]
-		print("childrenCard = ")
-		print(childrenCard)
-			# Fill m_nodeIndexPerLayer
-		nodeIndexPerLayer = [[] for x in range(self.m_layers[-1] + 1)]
-		currentLayer = 0
-		for i in range(self.m_size) :
-			if self.m_layers[i] != currentLayer :
-				currentLayer = self.m_layers[i]
-			nodeIndexPerLayer[currentLayer].append(i)
-		self.m_nodeIndexPerLayer = nodeIndexPerLayer
-		print("nodeIndexPerLayer = ")
-		print(self.m_nodeIndexPerLayer)
-		 	# Fill parents and children
-		parents = [[] for x in range(self.m_size)]
-		children = [[] for x in range(self.m_size)]
-		layer = self.m_layers[-1]
-		while(layer > self.m_layers[0]) :
-			maxPotentialEdges = 0
-			minPotentialEdges = 0
-			for nodeId in self.m_nodeIndexPerLayer[layer - 1] :
-				(minE, maxE) = self.m_potentialChildrenCard[nodeId]
-				maxPotentialEdges += maxE
-		   		minPotentialEdges += minE
-		 	if maxPotentialEdges != minPotentialEdges :
-	 			edgesCard = random.randrange(maxPotentialEdges - minPotentialEdges) + minPotentialEdges
-			else :
-				edgesCard = minPotentialEdges
-			potentialParent = []
-			priorPotentialParent = []
-			for parentId in self.m_nodeIndexPerLayer[layer - 1] :
-				if childrenCard[parentId] < potentialChildrenCard[parentId][1] :
-					potentialParent.append(parentId)
-					if childrenCard[parentId] < potentialChildrenCard[parentId][0] :
-						priorPotentialParent.append(parentId)
-			remainingNodes = len(self.m_nodeIndexPerLayer[layer])
-			for childId in self.m_nodeIndexPerLayer[layer] :
-				remainingNodes -= 1
-				maxRemainingEdge = edgesCard - remainingNodes - 1
-				if maxRemainingEdge > 0 :
-					edgeCard = random.randrange(maxRemainingEdge) + 1
-				else :
-					edgeCard = 1
-				edgesCard -= edgeCard
-				totPotentialPar = copy.copy(potentialParent)
-				priorPotentialPar = copy.copy(priorPotentialParent)
-				for e in range(edgeCard) :
-					if len(totPotentialPar) == 0 :
-						break
-					else :
-						if len(priorPotentialPar) > 0 :
-							parentId = priorPotentialPar[random.randrange(len(priorPotentialPar))]
-							childrenCard[parentId] += 1
-							if childrenCard[parentId] >= potentialChildrenCard[parentId][0] :
-								priorPotentialParent.remove(parentId)
-							if childrenCard[parentId] >= potentialChildrenCard[parentId][1] :
-								potentialParent.remove(parentId)
-								totPotentialPar.remove(parentId)
-							priorPotentialPar.remove(parentId)
-							parents[childId].append(parentId)
-							children[parentId].append(childId)
-						else :
-							parentId = totPotentialPar[random.randrange(len(totPotentialPar))]
-							childrenCard[parentId] += 1
-							if childrenCard[parentId] == potentialChildrenCard[parentId][1] :
-								potentialParent.remove(parentId)
-							totPotentialPar.remove(parentId)
-							parents[childId].append(parentId)
-							children[parentId].append(childId)
-				del priorPotentialPar
-				del totPotentialPar
-			layer = layer - 1
-			print("edges : ")
-			print(childrenCard)
-		self.m_parents = parents
-		print("parents = ")
-		print(self.m_parents)
-		self.m_children = children
-		print("children = ")
-		print(self.m_children)
+			# Fill potentialChildrenCard
+		self.m_potentialChildrenCard = getPotentialChildrenCard(self.m_size)
+			# Fill nodeIndexPerLayer
+		self.m_nodeIndexPerLayer = getNodeIndexPerLayer(self.m_size, self.m_layers)
+		 	# Fill parents
+		self.m_parents = getParents(self.m_size, self.m_layers, self.m_nodeIndexPerLayer, self.m_potentialChildrenCard)
+			# Fill children
+		self.m_children = getChildren(self.m_parents, self.m_size)
 						
 #def addEdge(self, parentId, childId) :
 
@@ -192,7 +56,6 @@ class Graph :
 		self.m_parents[child2Id].append(parent1Id)
 		self.m_parents[child1Id].remove(parent1Id)
 		self.m_parents[child2Id].remove(parent2Id)
-		# TODO update kernels
 
 	def size(self) :
 		return self.m_size
@@ -212,6 +75,9 @@ class Graph :
 		dot.write('\tedge [color="black"];\nnode [shape="circle", color="white", fontcolor="black", style="filled"];\n')
 		for i in range(self.m_size) :
 			key = [k for k, val in self.m_vertexNature.iteritems() if val == self.m_natures[i]][0]
+			if key == None :
+				print("Null key")
+				break
 			if key == 'whileNot' :
 				dot.write('\t' + str(i) + ' [label="wN", ')
 			else :
@@ -230,5 +96,5 @@ class Graph :
 				dot.write('\t' + str(i) + ' -- ' + str(j) + ' ;\n')
 		dot.write('}')
 		dot.close()
-		os.system('dot -Tjpg -o' + dataFolder + 'graph.jpg graph.dot')
-		os.system('display graph.jpg')
+		os.system('dot -Tjpg -o' + dataFolder + 'graph.jpg ' + dataFolder + 'graph.dot')
+		os.system('display ' + dataFolder + 'graph.jpg')

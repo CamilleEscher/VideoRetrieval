@@ -3,6 +3,7 @@ from sklearn import svm
 from simulate import simulate
 import numpy as np
 from evaluation import *
+import os
 
 dataFolder = './gen_data/'
 trainFile = 'train.txt'
@@ -11,10 +12,13 @@ testFile = 'test.txt'
 testLabels = 'testLabels.txt'
 eventNb = 5
 keyframeNb = 10
+if not os.path.isdir(dataFolder) :
+	os.makedirs(dataFolder)
 simulate(5, 3, 100, dataFolder + 'train.txt', dataFolder + 'trainLabels.txt', 2)
 simulate(5, 3, 100, dataFolder + 'test.txt', dataFolder + 'testLabels.txt', 3)
 
 try :
+
 
 #Training
 	X = []
