@@ -23,7 +23,7 @@ class Graph :
 
 	def __init__(self, leafNodeCard, leafKernels) :
 		# Get number of node per layer and set size
-		cardinalities = getCards(leafNodeCard)
+		cardinalities = getCards(leafNodeCard / 2)
 		self.m_size = getSize(cardinalities)
 		# Get list of latest indexes per layer
 		lastIndexesPerLayer = getLastIndexesPerLayer(cardinalities)

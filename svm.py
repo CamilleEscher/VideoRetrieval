@@ -11,11 +11,12 @@ trainLabels = 'trainLabels.txt'
 testFile = 'test.txt'
 testLabels = 'testLabels.txt'
 eventNb = 5
-keyframeNb = 10
+keyframeNb = 3
+sampleNb = 100
 if not os.path.isdir(dataFolder) :
 	os.makedirs(dataFolder)
-simulate(5, 3, 100, dataFolder + 'train.txt', dataFolder + 'trainLabels.txt', 2)
-simulate(5, 3, 100, dataFolder + 'test.txt', dataFolder + 'testLabels.txt', 3)
+simulate(eventNb, keyframeNb, sampleNb, dataFolder + trainFile, dataFolder + trainLabels, 2)
+simulate(eventNb, keyframeNb, sampleNb, dataFolder + testFile, dataFolder + testLabels, 3)
 
 try :
 

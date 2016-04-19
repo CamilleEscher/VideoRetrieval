@@ -4,11 +4,15 @@ import numpy as np
 import copy
 
 def getCards(leafNodeCard) :
-		cardOfCurrentLayer = leafNodeCard
+		cardOfCurrentLayer = leafNodeCard #just take the 5 different concepts
 		cardinalities = []
 		while cardOfCurrentLayer > 1 :
 			cardinalities.insert(0, cardOfCurrentLayer)
-			cardOfCurrentLayer = int(ceil(cardOfCurrentLayer / 2.0))
+			if cardOfCurrentLayer == leafNodeCard :
+				while((cardOfCurrentLayer / 2.0) % 2 != 0) :
+					cardOfCurrentLayer -= 1
+			else :
+				cardOfCurrentLayer = int(ceil(cardOfCurrentLayer / 2.0))
 		cardinalities.insert(0, 1)
 		print("cardinalities = " + str(cardinalities))
 		return cardinalities
@@ -47,7 +51,18 @@ def buildNatures(vertexNature, size, layers) :
 		if layers[i] == layers[-1] :
 			natures[i] = vertexNature['leaf']
 		else :
-			natures[i] = random.randrange(3)
+			if i == 0 :
+				natures[i] = vertexNature['while']
+			elif layers[i] == layers[i - 1] and natures[i - 1] == vertexNature['before'] :
+				natures[i] = natures[i - 1]
+			elif layers[i] == layers[i - 1] :
+				natures[i] = random.randrange(2) + 1
+			elif (layers[i] > layers[i - 1] and natures[i - 1] == vertexNature['before']) :
+				natures[i] = random.randrange(2) + 1
+#elif (i > 0 and (natures[i - 1] == vertexNature['while'] or natures[i - 1] == vertexNature['whileNot'])) :
+#				natures[i] = 
+			else :
+				natures[i] = vertexNature['before']
 	print("natures = " + str(natures))
 	return natures
 
