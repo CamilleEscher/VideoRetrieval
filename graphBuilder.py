@@ -1,231 +1,230 @@
-from math import *
 import random
+from learningProcess import *
 import numpy as np
-import copy
 
-def getCards(leafNodeCard) :
-		cardOfCurrentLayer = leafNodeCard #just take the 5 different concepts
-		cardinalities = []
-		while cardOfCurrentLayer > 1 :
-			cardinalities.insert(0, cardOfCurrentLayer)
-			if cardOfCurrentLayer == leafNodeCard :
-				while((cardOfCurrentLayer / 2.0) % 2 != 0) :
-					cardOfCurrentLayer -= 1
+def buildPredecessors(cards) :
+	predecessors = {}
+	layerNb = len(cards)
+	maxSuccessorNb = 2
+	vertexIndexPerLayer = __getNodeIndexPerLayer(cards)
+	remainingPredecessorsToLink = __getPredecessorsToLink(predecessors, vertexIndexPerLayer)
+	for i in range(vertexIndexPerLayer[-1][-1] + 1) :
+		predecessors[i] = []
+	while len(remainingPredecessorsToLink) > 0 :
+		predecessorId = remainingPredecessorsToLink.pop()
+		layerOf = __getLayerOf(predecessorId, vertexIndexPerLayer)
+		if layerOf < layerNb - 1 :
+			verticesInNextLayer = vertexIndexPerLayer[layerOf + 1]
+			remainingSuccessorsToLinkInLayer = __getUnlinkedSuccessorsInLayer(predecessors, verticesInNextLayer, (layerOf == layerNb - 2))
+			if len(remainingSuccessorsToLinkInLayer) > 0 :
+				successorId = remainingSuccessorsToLinkInLayer[random.randrange(len(remainingSuccessorsToLinkInLayer))]
+				if predecessorId in predecessors[successorId] :
+					remainingSuccessorsToLinkInLayer.remove(successorId)
+					successorId = remainingSuccessorsToLinkInLayer[random.randrange(len(remainingSuccessorsToLinkInLayer))]
 			else :
-				cardOfCurrentLayer = int(ceil(cardOfCurrentLayer / 2.0))
-		cardinalities.insert(0, 1)
-		print("cardinalities = " + str(cardinalities))
-		return cardinalities
+				adaptedSucessors = copy.copy(__getNodeIndexPerLayer(cards))[layerOf + 1]
+				for potentialSuccessor in adaptedSucessors :
+					if predecessorId in predecessors[potentialSuccessor] :
+						adaptedSucessors.remove(potentialSuccessor)
+				successorId = adaptedSucessors[random.randrange(len(adaptedSucessors))]
+			predecessors[successorId].append(predecessorId)	
+	return predecessors
 
-def getSize(cardinalities) :
-	size = 0
-	i = 0
-	while i < len(cardinalities) :
-		size += cardinalities[i]
-		i += 1
-	print("size = " + str(size))
-	return size
-
-def getLastIndexesPerLayer(cardinalities) :
-	lastIndexesPerLayer = [0 for x in range(len(cardinalities))]
-	lastIndexesPerLayer[0] += cardinalities[0] - 1
-	for i in range(1, len(cardinalities)) :
-		lastIndexesPerLayer[i] += lastIndexesPerLayer[i - 1] + cardinalities[i]
-	print("LastIndexesPerLayer = " + str(lastIndexesPerLayer))
-	return lastIndexesPerLayer
-
-def buildLayers(size, lastIndexesPerLayer) :
-	layers = [0 for x in range(size)]
-	layerCard = len(lastIndexesPerLayer)
-	for i in range(size) :
-		for j in range(layerCard) :
-			if i <= lastIndexesPerLayer[j] :
-				layers[i] = j
-				break
-	print("layers = " + str(layers))
-	return layers
-
-def buildNatures(vertexNature, size, layers) :
-	natures = [vertexNature['unknown'] for x in range(size)]
-	for i in range(size) :
-		if layers[i] == layers[-1] :
-			natures[i] = vertexNature['leaf']
+def __getNodeIndexPerLayer(cards) :
+	layerNb = len(cards)
+	vertexIndexPerLayer = [[] for x in range(layerNb)]
+	lastIndexPerLayer = [0 for x in range(layerNb)]
+	lastIndexPerLayer[0] = cards[0] - 1
+	for i in range(1, layerNb) :
+		lastIndexPerLayer[i] = lastIndexPerLayer[i - 1] + cards[i]
+	for i in range(layerNb) :
+		if i == 0 :
+			firstIndex = 0
 		else :
-			if i == 0 :
-				natures[i] = vertexNature['while']
-			elif layers[i] == layers[i - 1] and natures[i - 1] == vertexNature['before'] :
-				natures[i] = natures[i - 1]
-			elif layers[i] == layers[i - 1] :
-				natures[i] = random.randrange(2) + 1
-			elif (layers[i] > layers[i - 1] and natures[i - 1] == vertexNature['before']) :
-				natures[i] = random.randrange(2) + 1
-#elif (i > 0 and (natures[i - 1] == vertexNature['while'] or natures[i - 1] == vertexNature['whileNot'])) :
-#				natures[i] = 
+			firstIndex = lastIndexPerLayer[i - 1]
+		vertexIndexPerLayer[i].insert(0, lastIndexPerLayer[i])
+		offset = 1
+		while lastIndexPerLayer[i] - offset > firstIndex :
+			vertexIndexPerLayer[i].insert(0, lastIndexPerLayer[i] - offset)
+			offset += 1
+	return vertexIndexPerLayer
+			
+def __getPredecessorsToLink(predecessors, vertexIndexPerLayer) :
+	remainingPredecessorsToLink = []
+	completeSuccessorsCard = [2 for x in range(vertexIndexPerLayer[-1][0])]
+	for leafId in vertexIndexPerLayer[-1] :
+		completeSuccessorsCard.append(0)
+	currentSuccessorsCard = __getCurrentSuccessorsCards(predecessors, vertexIndexPerLayer)
+	for predecessorId in range(len(currentSuccessorsCard)) :
+		offset = 0
+		while currentSuccessorsCard[predecessorId] + offset < completeSuccessorsCard[predecessorId] :
+			remainingPredecessorsToLink.append(predecessorId)
+			offset += 1
+	return remainingPredecessorsToLink
+
+def __getLayerOf(predecessorId, vertexIndexPerLayer) :
+	layer = -1
+	for verticesInLayer in vertexIndexPerLayer :
+		for predId in verticesInLayer :
+			if predId == predecessorId :
+				layer = vertexIndexPerLayer.index(verticesInLayer)
+	return layer
+
+def __getUnlinkedSuccessorsInLayer(predecessors, vertexInNextLayer, isLeafLayer = False) :
+	remainingSuccessorsToLinkInLayer = vertexInNextLayer
+	for successorId in vertexInNextLayer :
+		if predecessors[successorId] != [] :
+			remainingSuccessorsToLinkInLayer.remove(successorId)
+	return remainingSuccessorsToLinkInLayer
+
+def __getCurrentSuccessorsCards(predecessors, vertexIndexPerLayer) :
+	successorsCard = [0 for x in range(vertexIndexPerLayer[-1][-1] + 1)]
+	if not __isEmpty(predecessors) :
+		successors = __getSuccessors(predecessors)
+		for predId in successors.keys() :
+			successorsCard[predId] = len(successors[predId]) 
+	return successorsCard
+
+def __isEmpty(predecessors) :
+	empty = True
+	for i in predecessors.keys() :
+		if len(predecessors[i]) > 0 :
+			empty = False
+	return empty
+
+def __getSuccessors(predecessors) :
+	successors = {}
+	for successorId in predecessors.keys() :
+		if successorId not in successors.keys() :
+			successors[successorId] = []
+		for predecessorId in predecessors[successorId] :
+			if predecessorId in successors :
+				successors[predecessorId].append(successorId)
 			else :
-				natures[i] = vertexNature['before']
-	print("natures = " + str(natures))
-	return natures
-
-def initKernels(size, vertexNature, leafKernels) :
-	kernels = [np.zeros(leafKernels[0].shape) for x in range(size)]
-	natures = [-1 for x in range(size)]
-	it = 0
-	for i in range(size) :
-		if natures[i] == vertexNature['leaf'] :
-			kernels[i] = leafKernels[it]
-			it += 1
-#print("kernels = " + str(kernels))
-	return kernels
-
-def getPotentialChildrenCard(size) :
-	potentialChildrenCard = [(0, 0) for x in range(size)]
-	for i in range(size) :
-	   	potentialChildrenCard[i] = (2, 2)
-	print("potentialChildrenCard = " + str(potentialChildrenCard))
-	return potentialChildrenCard
-
-def getNodeIndexPerLayer(size, layers) :
-	nodeIndexPerLayer = [[] for x in range(layers[-1] + 1)]
-	currentLayer = 0
-	for i in range(size) :
-		if layers[i] != currentLayer :
-			currentLayer = layers[i]
-		nodeIndexPerLayer[currentLayer].append(i)
-	print("nodeIndexPerLayer = " + str(nodeIndexPerLayer))
-	return nodeIndexPerLayer
-
-def getPotentialParents(layer, nodeIndexPerLayer, childrenCard, potentialChildrenCard) :
-	extraPotentialParents = []
-	priorPotentialParents = []
-	for parentId in nodeIndexPerLayer[layer - 1] :
-		i = 0
-		currentCard = childrenCard[parentId]
-		minPotentialCard = potentialChildrenCard[parentId][0]
-		maxPotentialCard = potentialChildrenCard[parentId][1]
-		while currentCard + i < minPotentialCard :
-			priorPotentialParents.append(parentId)
-			i += 1
-		if (currentCard + i < maxPotentialCard) and (currentCard + i >= minPotentialCard) :
-			j = 0
-			while(currentCard + i + j < maxPotentialCard) :
-				extraPotentialParents.append(parentId)
-				j += 1
-	print("extraPotentialParents = " + str(extraPotentialParents))
-	print("priorPotentialParents = " + str(priorPotentialParents))
-	return (extraPotentialParents, priorPotentialParents)
-
-def getEdgesCardBoundaries(nodeIndexPerLayer, layer, potentialChildrenCard) :
-	maxPotentialEdges = 0
-	minPotentialEdges = 0
-	for nodeId in nodeIndexPerLayer[layer - 1] :
-		(minE, maxE) = potentialChildrenCard[nodeId]
-		maxPotentialEdges += maxE
-		minPotentialEdges += minE
-	return (minPotentialEdges, maxPotentialEdges)
-
-def getRandomEdgeCardForLayer(minPotentialEdges, maxPotentialEdges) :
-	edgeCardForCurrentLayer = 0
-	if maxPotentialEdges != minPotentialEdges :
-	 	edgeCardForCurrentLayer = random.randrange(maxPotentialEdges - minPotentialEdges) + minPotentialEdges
-	else :
-		edgeCardForCurrentLayer = minPotentialEdges
-	return edgeCardForCurrentLayer
-
-def getChildrenOf(parents, parentId) :
-	childrenOf = []
-	for childId in range(len(parents)) :
-		for p in parents[childId] :
-			if p == parentId :
-				childrenOf.append(childId)
-	return childrenOf
-
-def getParents(size, layers, nodeIndexPerLayer, potentialChildrenCard) :
-	parents = [[] for x in range(size)]
-	childrenCard = [0 for x in range(size)]
-	print("childrenCard = " + str(childrenCard))
-	layer = layers[-1]
-	while(layer > layers[0]) :
-		(minPotE, maxPotE) = getEdgesCardBoundaries(nodeIndexPerLayer, layer, potentialChildrenCard)
-		edgeCardForCurrentLayer = getRandomEdgeCardForLayer(minPotE, maxPotE)
-		(extraPotParents, priorPotParents) = getPotentialParents(layer, nodeIndexPerLayer, childrenCard, potentialChildrenCard)
-		remainingNodes = len(nodeIndexPerLayer[layer])
-		for childId in nodeIndexPerLayer[layer] :
-			remainingNodes -= 1
-			maxRemainingEdge = edgeCardForCurrentLayer - remainingNodes + 1
-			if maxRemainingEdge > 1 :
-				if childId == nodeIndexPerLayer[layer][-1] :
-					edgeCard = maxRemainingEdge
-				else :
-					edgeCard = random.randrange(maxRemainingEdge - 1) + 1
-			else :
-				edgeCard = 1
-			edgeCardForCurrentLayer -= edgeCard
-# choose and set new edges
-			(childrenCard, parents, extraPotParents, priorPotParents) = updateParents(childId, size, extraPotParents, priorPotParents, edgeCard, childrenCard, potentialChildrenCard, parents)
-		structureIssue = False
-		while (len(priorPotParents) > 0 and not structureIssue) :
-			for i in priorPotParents :
-				potentialChildren = nodeIndexPerLayer[layer]
-				children = getChildrenOf(parents, i)
-				for j in children :
-					if j in potentialChildren :
-						potentialChildren.remove(j)
-					else :
-						print("j = " + str(j))
-						print("children of " + str(i) + " " + str(children))
-						print("potentialChildren = " + str(potentialChildren))
-						print("parents = " + str(parents))
-				if len(potentialChildren) == 0 :
-					structureIssue = True
-					print("Structural issue : node " + str(i) + " in layer " + str(layer - 1) + " can not fit the cardinality requirements")
-				else :
-					newChild = potentialChildren[random.randrange(len(potentialChildren))]
-					parents[newChild].append(i)
-					priorPotParents.remove(i)
+				successors[predecessorId] = [successorId]
+	return successors
 				
-		layer = layer - 1
-		print("edges : " + str(childrenCard))
-	print("parents = " + str(parents))
-	return parents
-
-def removeDuplicates(iList) :
-	newList = []
-	for i in iList :
-		if i not in newList :
-			newList.append(i)
-	return newList
-
-def updateParents(childId, size, ePP, pPP, edgeCard, childrenCard, potentialChildrenCard, parents) :
-	remainingEPP = removeDuplicates(ePP)
-	remainingPPP = removeDuplicates(pPP)
-	listOfInterest = remainingEPP
-	refList = ePP
-
-	for e in range(edgeCard) :
-		if len(remainingEPP) == 0 and len(remainingPPP) == 0 :
-			break
+def getNatures(predecessors, vertexNatures, layers) :
+	natures = dict()
+	for successorId in predecessors.keys() :
+		layerOf = layers[successorId]
+		if layerOf == -1 or layerOf == 3 :
+			natures[successorId] = vertexNatures['leaf']
+		elif layerOf == 0 :
+			natures[successorId] = vertexNatures['while']
+		elif layerOf == 1 :
+			natures[successorId] = vertexNatures['before']
 		else :
-			if len(remainingPPP) > 0 :
-				listOfInterest = remainingPPP
-				refList = pPP
-			if len(listOfInterest) > 0 :
-				parentId = listOfInterest[random.randrange(len(listOfInterest))]
-				childrenCard[parentId] += 1
-				listOfInterest.remove(parentId)
-				if refList == ePP :
-					ePP.remove(parentId)
-				else :
-					pPP.remove(parentId)
-				parents[childId].append(parentId)
-			else :
-				print("list Of interest empty")
-	return (childrenCard, parents, ePP, pPP)
+			natures[successorId] = vertexNatures['whileNot']
+	return natures
+	
+def getValues(trainFilePath, labelFilePath, graph, vertexNatures, conceptNb, keyframeNb, classId) :
+	valuesNb = len(graph.m_successors)
+	posValues = [[] for x in range(valuesNb)]
+	negValues = [[] for x in range(valuesNb)]
+	startLeafValues = valuesNb - conceptNb * keyframeNb
+	for concept in range(conceptNb * keyframeNb) :
+		(posValue, negValue) = getTrainingVectors(conceptNb, keyframeNb, trainFilePath, labelFilePath, classId, concept)
+		posValues[startLeafValues + concept] = posValue
+		negValues[startLeafValues + concept] = negValue
+	return (posValues, negValues)
 
-def getChildren(parents, size) :
-	children = [[] for x in range(size)]
-	for i in range(size) :
-		for j in range(size) :
-			if j in parents[i] :
-				children[j].append(i)	
-	print("children = " + str(children))
-	return children
+def getTestValues(trainFilePath, labelFilePath, graph, vertexNatures, conceptNb, keyframeNb, classId) :
+	valuesNb = len(graph.m_successors)
+	values = [[] for x in range(valuesNb)]
+	startLeafValues = valuesNb - conceptNb * keyframeNb
+	for concept in range(conceptNb * keyframeNb) :
+		value = getTestTrainingVectors(conceptNb, keyframeNb, trainFilePath, labelFilePath, classId, concept)
+		values[startLeafValues + concept] = value
+	return values
+
+def adaptEdges(graph, vertexNatures, natures) :
+	for successorId in graph.m_predecessors.keys() :
+		predecessors = copy.copy(graph.m_predecessors[successorId])
+		if len(predecessors) > 1 and graph.m_layers[successorId] == vertexNatures['leaf'] - 1 :
+			priorPred = -1
+			for pred in predecessors :
+				predOfPredecessors = graph.m_predecessors[pred][0]
+				if graph.m_successors[predOfPredecessors][0] == pred :
+					priorPred = pred
+				indexInPred = graph.m_successors[pred].index(successorId)
+				siblingSuccessorId = graph.m_successors[pred][1 - indexInPred]
+				if (indexInPred == 0 and priorPred == pred) or (indexInPred == 1 and priorPred != pred) :
+					swapBranches(graph, (pred, successorId, pred, siblingSuccessorId))
+	adaptLeafEdges(graph, vertexNatures, natures)
+	return graph
+
+# for each predecessor of a leaf, get the appropriate batch according to its before predecessor
+# check if the successors are in the right batch
+# otherwise, replace the successor by a random successor in the batch
+def adaptLeafEdges(graph, vertexNatures, natures) :
+	predecessorOfLeaves = []
+	for i in graph.m_successors :
+		for successor in graph.m_successors[i] :
+			if graph.m_layers[successor] == vertexNatures['leaf'] :
+				predecessorOfLeaves.append(i)
+	for pred in predecessorOfLeaves :
+		beforePred = graph.m_predecessors[pred][0]
+		edgePrio = 1
+		if graph.m_successors[beforePred][0] == pred :
+			edgePrio = 0
+		listOfLeaves = getPotentialSuccessors(beforePred, edgePrio, natures, vertexNatures, graph.m_successors)
+		for successorId in graph.m_successors[pred] :
+			successorPos = graph.m_successors[pred].index(successorId)
+			if successorId not in listOfLeaves :
+				graph.m_successors[pred].remove(successorId)
+				graph.m_predecessors[successorId].remove(pred)
+				newSuccessor = listOfLeaves[random.randrange(len(listOfLeaves))]
+				while newSuccessor in graph.m_successors[pred] :
+					newSuccessor = listOfLeaves[random.randrange(len(listOfLeaves))]
+				listOfLeaves.remove(newSuccessor)
+				if successorPos == 0 :
+					graph.m_successors[pred].insert(0, newSuccessor)
+				else :
+					graph.m_successors[pred].append(newSuccessor)
+				graph.m_predecessors[newSuccessor].append(pred)
+	return graph
+
+def getTrainingVectors(eventNb, keyframeNb, trainFilePath, labelFilePath, classId, subEventTargetted) :
+	positiveConcepts = []
+	negativeConcepts = []
+	sampleNb = sum(1 for line in open(trainFilePath))
+	labels = [0 for x in range(sampleNb)]
+	data = np.zeros((eventNb * keyframeNb, sampleNb))
+	lineNb = -1
+	with open(trainFilePath, 'r') as fTrain :
+		for line in fTrain :
+			lineNb += 1
+			line = line.replace('[', '')
+			line = line.replace(']', '')
+			line = line.replace('\n', '')
+			keyframeList = list(line.split(', '))
+			for elem in keyframeList :
+				data[keyframeList.index(elem), lineNb] = elem
+	with open(labelFilePath, 'r') as fLabels :
+		sample = 0
+		for line in fLabels :
+ 			labels[sample] = int(line)
+			sample += 1
+	for sample in range(sampleNb) :
+		if labels[sample] == classId :
+			positiveConcepts.append(data[subEventTargetted, sample])
+		else :
+			negativeConcepts.append(data[subEventTargetted, sample])
+	return (positiveConcepts, negativeConcepts)
+
+def getTestTrainingVectors(eventNb, keyframeNb, trainFilePath, labelFilePath, classId, subEventTargetted) :
+	sampleNb = sum(1 for line in open(trainFilePath))
+	data = np.zeros((eventNb * keyframeNb, sampleNb))
+	lineNb = -1
+	with open(trainFilePath, 'r') as fTrain :
+		for line in fTrain :
+			lineNb += 1
+			line = line.replace('[', '')
+			line = line.replace(']', '')
+			line = line.replace('\n', '')
+			keyframeList = list(line.split(', '))
+			for elem in keyframeList :
+				data[keyframeList.index(elem), lineNb] = elem
+	conceptsValues = data[subEventTargetted, :]
+	return conceptsValues
