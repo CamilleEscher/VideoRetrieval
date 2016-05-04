@@ -11,7 +11,7 @@
 <strong>Tools and language : </strong>
 <ul>
 <li>Ubuntu 15.04 (OS) </li>
-<li>Python2 (Language)</li>
+<li>Python 2.7.9 (Language)</li>
 <li>Pdb (Debugger)</li>
 <li>VIM (Editor)</li>
 <li>Scikit-learn (Library)</li>
