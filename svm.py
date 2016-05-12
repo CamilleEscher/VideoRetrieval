@@ -3,7 +3,7 @@ from sklearn import svm
 from evaluation import *
 import os
 
-def svmTraining(dataFolder, trainFile, testFile, trainLabels, testLabels, eventNb, keyframeNb, sampleNb) :
+def svmTraining(dataFolder, trainFile, testFile, trainLabels, testLabels, eventNb, keyframeNb, sampleNb, classNb, randomClasses) :
 	try :
 	#Training
 		X = []
@@ -61,15 +61,15 @@ def svmTraining(dataFolder, trainFile, testFile, trainLabels, testLabels, eventN
 		svmRes.close()
 
 	#Building the confusion matrix
-		cMat = getConfusionMatrix(3, dataFolder, testLabels, 'testClassification.txt')
+		cMat = getConfusionMatrix(classNb + 1, dataFolder, testLabels, 'testClassification.txt')
 		print('Confusion matrix of the SVM method = \n' + str(cMat))
 
 	# Process Mean Average Precision
 		# taking the 3d class into account
-		MAP3 = getMAP(cMat, 3, {})
+		MAP3 = getMAP(cMat, classNb + 1, {})
 		print('MAP3 = ' + str(MAP3))
-		# ignoring the 3d class
-		MAP2 = getMAP(cMat, 3, {2})
+		# ignoring the random classes
+		MAP2 = getMAP(cMat, classNb + 1, randomClasses)
 		print('MAP2 = ' + str(MAP2))
 
 	except IOError:

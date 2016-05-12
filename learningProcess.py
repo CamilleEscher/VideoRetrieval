@@ -2,13 +2,32 @@ import random
 import copy
 import math
 
+'''
 def whileOp(successorA, successorB, posValues, negValues) :	
 	posVector = [x + y for x, y in zip(posValues[successorA], posValues[successorB])]
 	negVector = [x + y for x, y in zip(negValues[successorA], negValues[successorB])]
 	return (posVector, negVector)
+'''
+def whileOp(successors, posValues, negValues) :
+	posVector = []
+	negVector = []
+	for successorId in successors :
+		if successors[0] == successorId :
+			posVector = posValues[successorId]
+			negVector = negValues[successorId]
+		else :
+			posVector = [x + y for x, y in zip(posVector, posValues[successorId])]
+			negVector = [x + y for x, y in zip(negVector, negValues[successorId])]
+	return (posVector, negVector)
 
-def whileOpTest(successorA, successorB, values) :	
-	vector = [x + y for x, y in zip(values[successorA], values[successorB])]
+def whileOpTest(successors, values) :	
+	vector = []
+	for successorId in successors :
+		if successors[0] == successorId :
+			vector = values[successorId]
+		else :
+			vector = [x + y for x, y in zip(vector, values[successorId])]
+#	vector = [x + y for x, y in zip(values[successorA], values[successorB])]
 	return vector
 
 def whileNotOp(successorA, successorB, posValues, negValues) :
@@ -114,6 +133,7 @@ def __reversePivotArgs(args) :
 def __getListOfLeaves(vertexId, predecessors, successors, natures, vertexNatures) :
 	beforePred = predecessors[vertexId][0]
 	edgePrio = 1
+# CHAN
 	if successors[beforePred][0] == vertexId :
 		edgePrio = 0
 	return getPotentialSuccessors(beforePred, edgePrio, natures, vertexNatures, successors)
@@ -225,16 +245,16 @@ def bottomUp(posValues, negValues, successors, layers, natures, vertexNatures) :
 		for vertex in verticesInLayer :
 			successorsOf = successors[vertex]
 			nat = natures[vertex]
-			if len(successorsOf) == 2 :
+			if len(successorsOf) == 2 and nat != vertexNatures['while'] :
 				if nat == vertexNatures['before'] :
 					(posValues[vertex], negValues[vertex]) = beforeOp(successorsOf[0], successorsOf[1], posValues, negValues)
-				elif nat == vertexNatures['while'] :
-					(posValues[vertex], negValues[vertex]) = whileOp(successorsOf[0], successorsOf[1], posValues, negValues)
 				elif nat == vertexNatures['whileNot'] :
 					(posValues[vertex], negValues[vertex]) = whileNotOp(successorsOf[0], successorsOf[1], posValues, negValues)
 				else :
 					print(str(natures[vertex]) + ' is not used in bottom-up inference')
 					break
+			elif nat == vertexNatures['while'] :
+				(posValues[vertex], negValues[vertex]) = whileOp(successorsOf, posValues, negValues)
 			else :
 				print(str(vertex) + ' has ' + str(len(successorsOf)) + ' successors : should have 2 successors')
 				break
@@ -254,13 +274,13 @@ def bottomUpOnTests(values, successors, layers, natures, vertexNatures) :
 			if len(successorsOf) == 2 :
 				if nat == vertexNatures['before'] :
 					values[vertex] = beforeOpTest(successorsOf[0], successorsOf[1], values)
-				elif nat == vertexNatures['while'] :
-					values[vertex] = whileOpTest(successorsOf[0], successorsOf[1], values)
 				elif nat == vertexNatures['whileNot'] :
 					values[vertex] = whileNotOpTest(successorsOf[0], successorsOf[1], values)
 				else :
 					print(str(natures[vertex]) + ' is not used in bottom-up inference')
 					break
+			elif nat == vertexNatures['while'] :
+				values[vertex] = whileOpTest(successorsOf, values)
 			else :
 				print(str(vertex) + ' has ' + str(len(successorsOf)) + ' successors : should have 2 successors')
 				break

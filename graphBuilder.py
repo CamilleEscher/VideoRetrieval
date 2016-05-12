@@ -2,10 +2,10 @@ import random
 from learningProcess import *
 import numpy as np
 
-def buildPredecessors(cards) :
+'''
+def endPredecessors(cards) :
 	predecessors = {}
 	layerNb = len(cards)
-	maxSuccessorNb = 2
 	vertexIndexPerLayer = __getNodeIndexPerLayer(cards)
 	remainingPredecessorsToLink = __getPredecessorsToLink(predecessors, vertexIndexPerLayer)
 	for i in range(vertexIndexPerLayer[-1][-1] + 1) :
@@ -28,6 +28,36 @@ def buildPredecessors(cards) :
 						adaptedSucessors.remove(potentialSuccessor)
 				successorId = adaptedSucessors[random.randrange(len(adaptedSucessors))]
 			predecessors[successorId].append(predecessorId)	
+	return predecessors
+'''
+
+def buildPredecessors(cards) :
+	predecessors = {}
+	layerNb = len(cards)
+	vertexIndexPerLayer = __getNodeIndexPerLayer(cards)
+	remainingPredecessorsToLink = __getPredecessorsToLink(predecessors, vertexIndexPerLayer)
+	for i in range(vertexIndexPerLayer[-1][-1] + 1) :
+		predecessors[i] = []
+	currentPredecessor = vertexIndexPerLayer[0][0]
+	while currentPredecessor != vertexIndexPerLayer[-1][0] :
+		currentLayer = __getLayerOf(currentPredecessor, vertexIndexPerLayer)
+		siblingVertices = copy.copy(vertexIndexPerLayer[currentLayer])
+		siblingVertices.remove(currentPredecessor)
+		successors = vertexIndexPerLayer[currentLayer + 1]
+		if len(siblingVertices) == 0 :
+			for successorId in successors :
+				predecessors[successorId].append(currentPredecessor)
+		elif cards[currentLayer] == cards[currentLayer + 1] - 1  :
+			indexOfPredecessor = vertexIndexPerLayer[currentLayer].index(currentPredecessor)
+			predecessors[vertexIndexPerLayer[currentLayer + 1][indexOfPredecessor]].append(currentPredecessor)
+			predecessors[vertexIndexPerLayer[currentLayer + 1][indexOfPredecessor + 1]].append(currentPredecessor)
+		elif cards[currentLayer] <= cards[currentLayer + 1] * 2 :
+			indexOfPredecessor = vertexIndexPerLayer[currentLayer].index(currentPredecessor)
+			predecessors[vertexIndexPerLayer[currentLayer + 1][indexOfPredecessor * 2]].append(currentPredecessor)
+			predecessors[vertexIndexPerLayer[currentLayer + 1][indexOfPredecessor * 2 + 1]].append(currentPredecessor)
+		else :
+			print('condition failure')
+		currentPredecessor += 1
 	return predecessors
 
 def __getNodeIndexPerLayer(cards) :
@@ -52,6 +82,7 @@ def __getNodeIndexPerLayer(cards) :
 def __getPredecessorsToLink(predecessors, vertexIndexPerLayer) :
 	remainingPredecessorsToLink = []
 	completeSuccessorsCard = [2 for x in range(vertexIndexPerLayer[-1][0])]
+	completeSuccessorsCard[0] = len(vertexIndexPerLayer[1])
 	for leafId in vertexIndexPerLayer[-1] :
 		completeSuccessorsCard.append(0)
 	currentSuccessorsCard = __getCurrentSuccessorsCards(predecessors, vertexIndexPerLayer)
@@ -114,8 +145,10 @@ def getNatures(predecessors, vertexNatures, layers) :
 			natures[successorId] = vertexNatures['while']
 		elif layerOf == 1 :
 			natures[successorId] = vertexNatures['before']
-		else :
+		elif layerOf == 2 :
 			natures[successorId] = vertexNatures['whileNot']
+		else :
+			print('No nature has been set for layer : ' + str(layerOf))
 	return natures
 	
 def getValues(trainFilePath, labelFilePath, graph, vertexNatures, conceptNb, keyframeNb, classId) :

@@ -1,18 +1,46 @@
 import numpy as np
+import os
 
-def writePredictionFile(rootValuesPerClass, predictionFilePath, classNb) :
-	# get prediction
+def getPrediction(rootValuesPerClass, predictionFilePath, sampleNb) :
+	classNb = len(rootValuesPerClass)
+	posRatio = [0 for x in range(classNb)]
+	negRatio = [0 for x in range(classNb)]
+	posVal = 0
+	negVal = 0
 	prediction = []
-	for valC1, valC2 in zip(rootValuesPerClass[0], rootValuesPerClass[1]) :
-		ratio1 = (valC1) / float(valC2)
-		ratio2 = 1.0 / float(ratio1)
-		if ratio1 > ratio2 * (3 / 2.0) and ratio1 > 1 :
-			prediction.append(1)
-		elif ratio2 > ratio1 * (3 / 2.0) and ratio2 > 1 :
-			prediction.append(2)
-		else :
-			prediction.append(3)
-	# write results of prediction
+	for sampleId in range(sampleNb) :
+		for classId in range(classNb) :
+			if len(rootValuesPerClass[classId]) > sampleId :
+				posVal = rootValuesPerClass[classId][sampleId]
+				for negativeClassId in range(classNb) :
+					if negativeClassId != classId :
+						negVal += rootValuesPerClass[negativeClassId][sampleId]
+			negVal /= float(classNb)
+			posRatio[classId] = (posVal) / float(negVal)
+			negRatio[classId] = (negVal) / float(posVal)
+		maxVal = 0
+		classLabel = -1
+		for iR in range(classNb) :
+			if negRatio[iR] == 0 :
+				classLabel = iR
+				break
+			else :
+				val = posRatio[iR]
+				if val > maxVal and negRatio[iR] < 1.0:
+					maxVal = val
+					classLabel = iR
+			if iR == classNb - 1 and classLabel == -1 :
+				val = posRatio[iR]
+				if val > maxVal :
+					maxVal = val
+					classLabel = iR
+		prediction.append(classLabel + 1)
+	return prediction
+
+def writePredictionFile(prediction, predictionFilePath) :
+	if not os.path.isfile(predictionFilePath) :
+		predictionFile = open(predictionFilePath, 'w')
+		predictionFile.close()
 	res = open(predictionFilePath, 'w')
 	for elem in prediction :
 		res.write(str(int(elem)))
@@ -26,7 +54,6 @@ def getConfusionMatrix(classNb, dataFolder, labelFileName, predictionFileName) :
 	with open(dataFolder + labelFileName, 'r') as labels :
 		for line in labels :
 			lab.append(float(line))
-
 	with open(dataFolder + predictionFileName, 'r') as predictions :
 		for line in predictions :
 			pred.append(float(line))
@@ -46,7 +73,7 @@ def getConfusionMatrix(classNb, dataFolder, labelFileName, predictionFileName) :
 def getMAP(confusionMatrix, classNb, ignoredClasses) :
 	MAP = 0
 	for i in range(classNb) :
-		 if i not in ignoredClasses :
+		if i not in ignoredClasses :
 		 	MAP += confusionMatrix[i][i]
 	return (MAP / float(classNb - len(ignoredClasses)))
 
