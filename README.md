@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 Internship project</h1>
+=======
+<h1>Internship project</h1>
+>>>>>>> e48b7cea9fed4b906b201cb22467528cb5e7aae8
 <p><strong>Supervision : </strong>Maaike de Boer</h1>
 <p><strong>Location : </strong>The Machine learning department of Radboud University in Nijmegen, the Netherlands</p>
 <p><strong>Author : </strong>Camille Escher</p>
