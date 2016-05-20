@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-Internship project</h1>
-=======
 <h1>Internship project</h1>
->>>>>>> e48b7cea9fed4b906b201cb22467528cb5e7aae8
 <p><strong>Supervision : </strong>Maaike de Boer</h1>
 <p><strong>Location : </strong>The Machine learning department of Radboud University in Nijmegen, the Netherlands</p>
 <p><strong>Author : </strong>Camille Escher</p>
@@ -10,7 +6,8 @@ Internship project</h1>
 <p><strong>Start date : </strong>   15/02/16</br></p>
 
 <p><strong>Main goal : </strong>Build a model and implement a prototype to better recognize events in videos by using the temporal relations of the sub-events sequence of events. </br>
-<p><strong>Progress : </strong>The graph and the inference process has been tested on the simulation data (see simulate.py for further details). The method is now able to classify events which are defined as simulated sequences of sub-events.</br>
+<p><strong>Progress : </strong>The graph and the inference process has been tested on the simulation data (see simulate.py for further details). The method is now able to classify events which are defined as simulated sequences of sub-events (x keyframes, y possible sub-events, one sub-event of interest per keyframe). The graph can classify n classes. Need to evaluate the complexity and to test the method on the VIRAT 2.0 dataset.</br></p>
+
 <p><strong>Files : </strong>
 <ul>
 <li>The entry point of the program is 'main.py'</li>
@@ -20,8 +17,6 @@ Internship project</h1>
 <li>The method is compared to a basic linear SVM method see 'SVM.py' : the implementation has been checked for 2 classes : update needed for multi-classes</li>
 <li>The calculation of the confusion matrix and the MAP - Mean Average Precision are implemented in 'evaluation.py'</li>
 </ul>
-
-by selecting the sub-events of interest (x keyframes, y possible sub-events, one sub-event of interest per keyframe) of the method is working for the n classes case. Need to evaluate the complexity and to test the method on the VIRAT 2.0 dataset.</br></p>
 
 <strong>Tools and language : </strong>
 <ul>
