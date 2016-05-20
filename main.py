@@ -8,11 +8,18 @@ import time
 import random
 import os
 
+def doesConverge(oldRatio, ratio) :
+	stopCriterion = False
+	epsilon = 0.0001
+	if float(abs(ratio - oldRatio)) < epsilon :
+		stopCriterion = True
+	return stopCriterion
+
 try :
 	clockStart = time.time()
 	# Generate simulated data
-	eventNb = 15
-	keyframeNb = 5
+	eventNb = 10
+	keyframeNb = 3
 	sampleNb = 100
 	classNb = 4
 	print('Generation of the simulated data generation with ' + str(classNb) + ' classes')
@@ -58,8 +65,12 @@ try :
 
 			# Training the graphs for each class (target sequence) 
 			epoch = 0
-			while(epoch < 1000) :
-				(posVal, negVal, ratio) = inferenceProcess(graphs[i], posVal, negVal, ratio, nat, vertexNatures, commands, argsCard)
+			stopCriterion = False
+			while(epoch < 100 and not stopCriterion) :
+				oldRatio = ratio
+				for j in range(50) :
+					(posVal, negVal, ratio) = inferenceProcess(graphs[i], posVal, negVal, ratio, nat, vertexNatures, commands, argsCard)
+				stopCriterion = doesConverge(ratio, oldRatio)
 				epoch += 1
 			valuesPerClass.append((posVal, negVal))
 			graphs[i].visualize(dataFolder, nat, eventNb, trainTargets[i])

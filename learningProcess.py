@@ -245,16 +245,16 @@ def bottomUp(posValues, negValues, successors, layers, natures, vertexNatures) :
 		for vertex in verticesInLayer :
 			successorsOf = successors[vertex]
 			nat = natures[vertex]
-			if len(successorsOf) == 2 and nat != vertexNatures['while'] :
+			if nat == vertexNatures['while'] :
+				(posValues[vertex], negValues[vertex]) = whileOp(successorsOf, posValues, negValues)
+			elif len(successorsOf) == 2 :
 				if nat == vertexNatures['before'] :
 					(posValues[vertex], negValues[vertex]) = beforeOp(successorsOf[0], successorsOf[1], posValues, negValues)
 				elif nat == vertexNatures['whileNot'] :
 					(posValues[vertex], negValues[vertex]) = whileNotOp(successorsOf[0], successorsOf[1], posValues, negValues)
 				else :
-					print(str(natures[vertex]) + ' is not used in bottom-up inference')
+					print(str(nat) + ' is not used in bottom-up inference')
 					break
-			elif nat == vertexNatures['while'] :
-				(posValues[vertex], negValues[vertex]) = whileOp(successorsOf, posValues, negValues)
 			else :
 				print(str(vertex) + ' has ' + str(len(successorsOf)) + ' successors : should have 2 successors')
 				break
@@ -271,7 +271,9 @@ def bottomUpOnTests(values, successors, layers, natures, vertexNatures) :
 		for vertex in verticesInLayer :
 			successorsOf = successors[vertex]
 			nat = natures[vertex]
-			if len(successorsOf) == 2 :
+			if nat == vertexNatures['while'] :
+				values[vertex] = whileOpTest(successorsOf, values)
+			elif len(successorsOf) == 2 :
 				if nat == vertexNatures['before'] :
 					values[vertex] = beforeOpTest(successorsOf[0], successorsOf[1], values)
 				elif nat == vertexNatures['whileNot'] :
@@ -279,8 +281,6 @@ def bottomUpOnTests(values, successors, layers, natures, vertexNatures) :
 				else :
 					print(str(natures[vertex]) + ' is not used in bottom-up inference')
 					break
-			elif nat == vertexNatures['while'] :
-				values[vertex] = whileOpTest(successorsOf, values)
 			else :
 				print(str(vertex) + ' has ' + str(len(successorsOf)) + ' successors : should have 2 successors')
 				break
